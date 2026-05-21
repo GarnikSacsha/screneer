@@ -1,0 +1,35 @@
+global:
+  min_quote_volume_24h: 10000000
+  stale_intervals_allowed: 2
+  min_active_member_ratio: 0.6
+
+events:
+  volume_spike:
+    ratio_min: 2.0
+    min_quote_volume_5m: 1000000
+    dedupe_ttl_sec: 900
+  oi_expansion:
+    change_15m_min_pct: 3.0
+    min_oi_usd: 5000000
+    dedupe_ttl_sec: 900
+  price_breakout:
+    return_15m_min_pct: 3.0
+    volume_spike_ratio_min: 1.8
+    dedupe_ttl_sec: 900
+  squeeze_risk:
+    liq_pct_15m_min: 2.0
+    long_short_skew_min: 0.65
+    dedupe_ttl_sec: 900
+  sector_leader:
+    top_n: 3
+    return_1h_min_pct: 2.0
+    dedupe_ttl_sec: 1800
+  lagging_asset:
+    sector_return_1h_min_pct: 2.0
+    asset_underperformance_min_pct: 1.5
+    asset_volume_spike_ratio_min: 1.2
+    dedupe_ttl_sec: 1800
+  absorption_candidate:
+    max_abs_return_15m_pct: 0.5
+    min_oi_change_15m_pct: 0.0
+    dedupe_ttl_sec: 900

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quant Desk - Sector Screener</title>
+    <link rel="stylesheet" href="styles.css?v=20260522-radar-scope-1" />
+  </head>
+  <body>
+    <main class="desk-shell">
+      <header class="desk-header">
+        <div>
+          <p class="eyebrow">Binance + Bybit · Sector Perps</p>
+          <h1>OI Screener</h1>
+        </div>
+        <div class="header-side">
+          <label class="scan-mode-box">
+            <span>Mode</span>
+            <select id="scanModeSelect">
+              <option value="core">Core</option>
+              <option value="expanded">Expanded</option>
+              <option value="full">Full Market</option>
+            </select>
+          </label>
+          <label class="scan-mode-box">
+            <span>Horizon</span>
+            <select id="horizonSelect">
+              <option value="intrawick">Intrawick</option>
+              <option value="intraday">Intraday</option>
+            </select>
+          </label>
+          <a class="doc-link" href="ANOMALY_SCREENER_TZ.md">Spec</a>
+          <a class="doc-link" href="#metricDocs">Metric Guide</a>
+          <div class="status-card">
+            <span>Snapshot</span>
+            <strong id="snapshotTime">16:42 UTC</strong>
+            <small id="snapshotStatus">Starting</small>
+          </div>
+          <button class="refresh-button" id="refreshButton" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <section class="signal-strip" id="signalStrip" aria-label="Market summary"></section>
+
+      <section class="workspace">
+        <section class="screener-panel" aria-label="Sector screener">
+          <div class="toolbar">
+            <label class="search-box">
+              <span>Search</span>
+              <input id="searchInput" type="search" placeholder="Sector or token" autocomplete="off" />
+            </label>
+            <label class="sort-box">
+              <span>Sort</span>
+              <select id="sortSelect">
+                <option value="rank">Signal rank</option>
+                <option value="oiUsd">OI size</option>
+                <option value="oiChange">OI change</option>
+                <option value="cvd">CVD</option>
+                <option value="longPct">Long share</option>
+                <option value="perf24h">24H</option>
+                <option value="liqPct">LIQ %</option>
+              </select>
+            </label>
+            <div class="filter-group" aria-label="Sector filters">
+              <button class="filter-button is-active" type="button" data-filter="all">All</button>
+              <button class="filter-button" type="button" data-filter="long">Long</button>
+              <button class="filter-button" type="button" data-filter="short">Short</button>
+              <button class="filter-button" type="button" data-filter="unclear">Unclear</button>
+              <button class="filter-button" type="button" data-filter="oi-heavy">OI &gt;$1B</button>
+            </div>
+          </div>
+
+          <div class="screener-table" role="table" aria-label="Sector data table">
+            <div class="screener-row screener-head" role="row">
+              <span role="columnheader">Sector</span>
+              <span role="columnheader">Index</span>
+              <span role="columnheader">Signal</span>
+              <span role="columnheader">Long / Short</span>
+              <span role="columnheader">OI Δ</span>
+              <span role="columnheader">OI</span>
+              <span role="columnheader">CVD 15M</span>
+              <span role="columnheader">Exchanges</span>
+            </div>
+            <div id="sectorRows"></div>
+          </div>
+        </section>
+
+        <aside class="detail-panel" aria-live="polite">
+          <div class="detail-head">
+            <div>
+              <p class="eyebrow" id="detailTag">Equal weighted</p>
+              <h2 id="detailName">Meme</h2>
+              <p id="detailDescription">Community-driven memecoins.</p>
+            </div>
+            <div class="index-tile">
+              <span id="detailIndex">65.94</span>
+              <small>index</small>
+            </div>
+          </div>
+
+          <section class="setup-panel">
+            <div class="section-title">
+              <h3>Setup Read</h3>
+              <span id="setupConfidence">high confidence</span>
+            </div>
+            <div class="setup-read">
+              <strong id="setupLabel">Squeeze Risk</strong>
+              <p id="setupReason">High liquidation pressure means volatility can stay unstable.</p>
+            </div>
+          </section>
+
+          <div class="flow-grid">
+            <div class="flow-card">
+              <span>LIQ pressure</span>
+              <strong id="liqPressure">12.40%</strong>
+              <div class="meter"><i id="liqMeter"></i></div>
+            </div>
+            <div class="flow-card">
+              <span>Long / Short</span>
+              <strong id="longShort">63 / 37</strong>
+              <div class="split-bar">
+                <i id="longBar"></i>
+                <b id="shortBar"></b>
+              </div>
+            </div>
+            <div class="flow-card">
+              <span>Open interest</span>
+              <strong id="oiValue">$2.8B</strong>
+              <small id="oiChange">+4.8%</small>
+            </div>
+            <div class="flow-card">
+              <span>CVD bias</span>
+              <strong id="cvdValue">+$42M</strong>
+              <small id="cvdSide">buyers</small>
+            </div>
+            <div class="flow-card">
+              <span>Orderbook</span>
+              <strong id="obValue">waiting</strong>
+              <small id="obSide">bid / ask walls</small>
+            </div>
+          </div>
+
+          <section class="basket-panel">
+            <div class="section-title">
+              <h3>Basket</h3>
+              <span id="memberCount">6 members</span>
+            </div>
+            <div class="member-chips" id="memberChips"></div>
+          </section>
+
+          <section class="token-panel">
+            <div class="section-title">
+              <h3>Constituents</h3>
+              <span>equal weight</span>
+            </div>
+            <div class="token-table" role="table" aria-label="Basket constituents">
+              <div class="token-row token-head" role="row">
+                <span role="columnheader">Token</span>
+                <span role="columnheader">Signal</span>
+                <span role="columnheader">Price</span>
+                <span role="columnheader">L/S</span>
+                <span role="columnheader">24H</span>
+                <span role="columnheader">5M/24H</span>
+                <span role="columnheader">Vol</span>
+              </div>
+              <div id="tokenRows"></div>
+            </div>
+          </section>
+        </aside>
+      </section>
+
+      <section class="outlier-panel" aria-label="Outlier radar">
+        <div class="outlier-head">
+          <div>
+            <p class="eyebrow">Predictive Radar</p>
+            <h2>Outlier Radar</h2>
+          </div>
+          <div class="outlier-controls" aria-label="Outlier radar scope">
+            <div class="radar-scope-toggle" role="group" aria-label="Radar scope">
+              <button class="is-active" type="button" data-radar-scope="market">All Market</button>
+              <button type="button" data-radar-scope="sector">Selected Sector</button>
+            </div>
+            <span id="outlierScopeLabel">intrawick base + TCD/CVD + OI/MCAP</span>
+          </div>
+        </div>
+        <div class="outlier-table" role="table" aria-label="Outlier candidates">
+          <div class="outlier-row outlier-row-head" role="row">
+            <span role="columnheader">Asset</span>
+            <span role="columnheader">Stage</span>
+            <span role="columnheader">Score</span>
+            <span role="columnheader">5M/24H</span>
+            <span role="columnheader">Base</span>
+            <span role="columnheader">OI/MCAP</span>
+            <span role="columnheader">D1 FVG</span>
+            <span role="columnheader">EMA/Box</span>
+            <span role="columnheader">Break</span>
+            <span role="columnheader">RS 1H</span>
+            <span role="columnheader">RS 24H</span>
+            <span role="columnheader">OI</span>
+            <span role="columnheader">TCD/CVD</span>
+            <span role="columnheader">Read</span>
+          </div>
+          <div id="outlierRows"></div>
+        </div>
+      </section>
+
+      <section class="outlook-panel" aria-label="Asset outlook cockpit">
+        <div class="outlook-main">
+          <div class="outlook-title">
+            <p class="eyebrow">Outlook Cockpit</p>
+            <h2 id="outlookAsset">-</h2>
+            <span id="outlookSubtitle">Select an outlier candidate</span>
+          </div>
+          <div class="outlook-score">
+            <strong id="outlookConfluence">0/6</strong>
+            <span>confluence</span>
+          </div>
+        </div>
+
+        <div class="outlook-grid">
+          <section class="outlook-card outlook-status-card">
+            <div class="section-title">
+              <h3>Status</h3>
+              <span id="outlookScore">score 0</span>
+            </div>
+            <strong id="outlookStage" class="stage-badge stage-watch">Watchlist</strong>
+            <p id="outlookRead">Waiting for stronger confirmation.</p>
+          </section>
+
+          <section class="outlook-card">
+            <div class="section-title">
+              <h3>Key Levels</h3>
+              <span>derived</span>
+            </div>
+            <div class="level-grid" id="outlookLevels"></div>
+          </section>
+
+          <section class="outlook-card">
+            <div class="section-title">
+              <h3>EMA Zones</h3>
+              <span>4H / 1D</span>
+            </div>
+            <div class="ema-grid" id="outlookEmaZones"></div>
+          </section>
+
+          <section class="outlook-card">
+            <div class="section-title">
+              <h3>Confluence</h3>
+              <span>14 checks</span>
+            </div>
+            <div class="check-list" id="outlookConfluenceList"></div>
+          </section>
+
+          <section class="outlook-card">
+            <div class="section-title">
+              <h3>Bullish Case</h3>
+              <span>needs</span>
+            </div>
+            <ul id="outlookBullish"></ul>
+          </section>
+
+          <section class="outlook-card">
+            <div class="section-title">
+              <h3>Bearish Invalidation</h3>
+              <span>risk</span>
+            </div>
+            <ul id="outlookBearish"></ul>
+          </section>
+        </div>
+      </section>
+
+      <section class="docs-panel" id="metricDocs">
+        <div class="docs-head">
+          <div>
+            <p class="eyebrow">Documentation</p>
+            <h2>Metric Guide</h2>
+          </div>
+          <a href="METRICS.md">Open markdown</a>
+        </div>
+        <div class="docs-grid" id="docsGrid"></div>
+      </section>
+
+      <section class="plain-guide-panel" aria-label="How the screener works">
+        <div class="docs-head">
+          <div>
+            <p class="eyebrow">Methodology</p>
+            <h2>Методология отбора пар и секторов</h2>
+          </div>
+        </div>
+
+        <div class="guide-copy">
+          <p>
+            Скринер построен как многоступенчатая система отбора. Его задача не в том, чтобы показать весь рынок подряд,
+            а в том, чтобы выделить пары и сектора, где одновременно появляется ликвидность, направленный поток, рост
+            деривативного интереса и технический контекст для продолжения движения.
+          </p>
+
+          <h3>1. Рыночный охват</h3>
+          <p>
+            Базовая вселенная включает Binance USDT perpetual pairs. Полный рынок может содержать сотни инструментов,
+            поэтому скринер использует предварительный фильтр: сначала оценивается общий список пар, затем в глубокий
+            анализ попадают только инструменты с достаточной активностью или признаками аномалии.
+          </p>
+
+          <h3>2. Этап предварительного фильтра</h3>
+          <p>
+            На первом этапе отбираются пары, которые имеют смысл анализировать глубже. Приоритет получают инструменты с
+            повышенным 24H volume, заметным изменением цены, большим количеством сделок, свежим листингом или принадлежностью
+            к активному сектору. Низколиквидные и неактивные пары не удаляются навсегда, но опускаются ниже, пока в них не
+            появится новый поток.
+          </p>
+
+          <h3>3. Метрики глубокого анализа</h3>
+          <ul>
+            <li><b>Relative Strength.</b> Сравнивает движение пары с рынком и сектором на 1H и 24H. Сильная пара должна опережать средний рынок.</li>
+            <li><b>Volume 24H.</b> Показывает, есть ли в инструменте реальная ликвидность. Без объема движение считается менее надежным.</li>
+            <li><b>5M / 24H volume.</b> Измеряет локальный всплеск активности относительно суточного оборота. Важен для раннего обнаружения импульса.</li>
+            <li><b>Open Interest.</b> Показывает размер открытых фьючерсных позиций. Рост OI означает приток новых позиций и потенциальное топливо.</li>
+            <li><b>OI / Market Cap.</b> Оценивает, насколько деривативный интерес велик относительно размера актива. Высокие значения повышают рефлексивность и риск.</li>
+            <li><b>CVD / TCD.</b> Оценивает агрессивный поток сделок. Положительное значение означает доминирование рыночных покупок, отрицательное - продаж.</li>
+            <li><b>Base / Consolidation.</b> Определяет, находится ли цена внутри накопления, рядом с верхней границей диапазона или уже вышла из базы.</li>
+            <li><b>EMA 4H / 1D.</b> EMA50 и EMA100 используются как трендовые зоны и потенциальная поддержка на среднесрочном горизонте.</li>
+            <li><b>Orderbook pressure.</b> Сравнивает ликвидность bid и ask рядом с текущей ценой, чтобы понять, где стоят ближайшие зоны давления.</li>
+          </ul>
+
+          <h3>4. Логика сигнала</h3>
+          <p>
+            Скринер не является кнопкой входа. Метки LONG, SHORT и UNCLEAR описывают рыночный контекст, а не готовую сделку.
+            Пара получает приоритет, когда несколько независимых факторов подтверждают друг друга: цена сильнее рынка,
+            объем растет, OI увеличивается, CVD/TCD поддерживает направление, а техническая структура не противоречит движению.
+          </p>
+          <ul>
+            <li><b>LONG.</b> Преобладает бычий поток: положительный CVD/TCD, рост OI, относительная сила или выход из базы.</li>
+            <li><b>SHORT.</b> Преобладает слабость: отрицательный поток, ухудшение цены, падение или опасная структура OI.</li>
+            <li><b>UNCLEAR / WAIT.</b> Подтверждений недостаточно. Такой актив можно наблюдать, но он не является приоритетом.</li>
+          </ul>
+
+          <h3>5. Outlier Radar</h3>
+          <p>
+            Outlier Radar ищет пары, которые отличаются от рынка сильнее обычного. Приоритет получают инструменты, где есть
+            сочетание: относительная сила, всплеск объема, рост OI, положительный CVD/TCD, близость к базе или пробой,
+            а также поддержка со стороны EMA. Чем больше совпадений, тем выше score.
+          </p>
+
+          <h3>6. Сектора</h3>
+          <p>
+            Секторный анализ нужен, чтобы отличать одиночное движение от тематического импульса. Если внутри одного сектора
+            одновременно усиливаются несколько пар, сектор получает более высокий приоритет. Если сектор слабый, но одна пара
+            резко выделяется, она может попасть в Outlier Radar отдельно.
+          </p>
+
+          <h3>7. Режимы данных</h3>
+          <p>
+            <b>Live</b> означает, что данные были получены из API в текущем скане. <b>Cached</b> означает, что Binance временно
+            ограничивает запросы или полный скан еще недоступен, поэтому используется последний сохраненный снимок. <b>Demo</b>
+            является аварийным режимом и не должен использоваться для торговых решений.
+          </p>
+
+          <h3>8. Практическое использование</h3>
+          <ul>
+            <li>Сначала смотреть сектора с высоким score и положительным flow.</li>
+            <li>Затем открыть пары из Outlier Radar и проверить график вручную.</li>
+            <li>Для long-сценария искать удержание базы, поддержку EMA и сохранение положительного CVD/TCD.</li>
+            <li>Для риска смотреть перегретый OI, сильные ask-зоны, отрицательный поток и потерю ключевых уровней.</li>
+            <li>Не использовать один показатель отдельно. Рабочий сигнал появляется только при совпадении нескольких факторов.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js?v=20260522-radar-scope-1"></script>
+  </body>
+</html>

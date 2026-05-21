@@ -1,0 +1,835 @@
+exchanges:
+  - code: binance
+    name: Binance USD-M Futures
+    enabled: true
+  - code: bybit
+    name: Bybit V5 Linear
+    enabled: false
+  - code: okx
+    name: OKX SWAP
+    enabled: false
+
+markets:
+  - exchange: binance
+    market_type: futures
+    symbol: DOGEUSDT
+    asset: DOGE
+    quote: USDT
+    sector: Meme
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: 1000SHIBUSDT
+    asset: SHIB
+    quote: USDT
+    sector: Meme
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: 1000PEPEUSDT
+    asset: PEPE
+    quote: USDT
+    sector: Meme
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: 1000FLOKIUSDT
+    asset: FLOKI
+    quote: USDT
+    sector: Meme
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: 1000BONKUSDT
+    asset: BONK
+    quote: USDT
+    sector: Meme
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: WIFUSDT
+    asset: WIF
+    quote: USDT
+    sector: Meme
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: RENDERUSDT
+    asset: RENDER
+    quote: USDT
+    sector: AI
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: FETUSDT
+    asset: FET
+    quote: USDT
+    sector: AI
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: TAOUSDT
+    asset: TAO
+    quote: USDT
+    sector: AI
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: WLDUSDT
+    asset: WLD
+    quote: USDT
+    sector: AI
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: AKTUSDT
+    asset: AKT
+    quote: USDT
+    sector: AI
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: NILUSDT
+    asset: NIL
+    quote: USDT
+    sector: AI
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: BTCUSDT
+    asset: BTC
+    quote: USDT
+    sector: Layer1
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ETHUSDT
+    asset: ETH
+    quote: USDT
+    sector: Layer1
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: SOLUSDT
+    asset: SOL
+    quote: USDT
+    sector: Layer1
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ADAUSDT
+    asset: ADA
+    quote: USDT
+    sector: Layer1
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: AVAXUSDT
+    asset: AVAX
+    quote: USDT
+    sector: Layer1
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: SUIUSDT
+    asset: SUI
+    quote: USDT
+    sector: Layer1
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: ONDOUSDT
+    asset: ONDO
+    quote: USDT
+    sector: RWA
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: SKYUSDT
+    asset: SKY
+    quote: USDT
+    sector: RWA
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: PENDLEUSDT
+    asset: PENDLE
+    quote: USDT
+    sector: RWA
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: CFGUSDT
+    asset: CFG
+    quote: USDT
+    sector: RWA
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: POLYXUSDT
+    asset: POLYX
+    quote: USDT
+    sector: RWA
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: IMXUSDT
+    asset: IMX
+    quote: USDT
+    sector: Gaming
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: RONINUSDT
+    asset: RONIN
+    quote: USDT
+    sector: Gaming
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: GALAUSDT
+    asset: GALA
+    quote: USDT
+    sector: Gaming
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: AXSUSDT
+    asset: AXS
+    quote: USDT
+    sector: Gaming
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: SANDUSDT
+    asset: SAND
+    quote: USDT
+    sector: Gaming
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: ARBUSDT
+    asset: ARB
+    quote: USDT
+    sector: L2
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: OPUSDT
+    asset: OP
+    quote: USDT
+    sector: L2
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: POLUSDT
+    asset: POL
+    quote: USDT
+    sector: L2
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: STRKUSDT
+    asset: STRK
+    quote: USDT
+    sector: L2
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: MANTAUSDT
+    asset: MANTA
+    quote: USDT
+    sector: L2
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: LDOUSDT
+    asset: LDO
+    quote: USDT
+    sector: ETH_Beta
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ENSUSDT
+    asset: ENS
+    quote: USDT
+    sector: ETH_Beta
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ENAUSDT
+    asset: ENA
+    quote: USDT
+    sector: ETH_Beta
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: UNIUSDT
+    asset: UNI
+    quote: USDT
+    sector: ETH_Beta
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: EIGENUSDT
+    asset: EIGEN
+    quote: USDT
+    sector: ETH_Beta
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: FILUSDT
+    asset: FIL
+    quote: USDT
+    sector: DePIN
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: IOTXUSDT
+    asset: IOTX
+    quote: USDT
+    sector: DePIN
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ARUSDT
+    asset: AR
+    quote: USDT
+    sector: DePIN
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: JASMYUSDT
+    asset: JASMY
+    quote: USDT
+    sector: DePIN
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: GRASSUSDT
+    asset: GRASS
+    quote: USDT
+    sector: DePIN
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: XRPUSDT
+    asset: XRP
+    quote: USDT
+    sector: Payments
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: LTCUSDT
+    asset: LTC
+    quote: USDT
+    sector: Payments
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: BCHUSDT
+    asset: BCH
+    quote: USDT
+    sector: Payments
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: XLMUSDT
+    asset: XLM
+    quote: USDT
+    sector: Payments
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: TRXUSDT
+    asset: TRX
+    quote: USDT
+    sector: Payments
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ETCUSDT
+    asset: ETC
+    quote: USDT
+    sector: Payments
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: AAVEUSDT
+    asset: AAVE
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: CRVUSDT
+    asset: CRV
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: COMPUSDT
+    asset: COMP
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: SUSHIUSDT
+    asset: SUSHI
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: YFIUSDT
+    asset: YFI
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: SNXUSDT
+    asset: SNX
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: LQTYUSDT
+    asset: LQTY
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: GMXUSDT
+    asset: GMX
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: JTOUSDT
+    asset: JTO
+    quote: USDT
+    sector: DeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: JUPUSDT
+    asset: JUP
+    quote: USDT
+    sector: Solana_Eco
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: LINKUSDT
+    asset: LINK
+    quote: USDT
+    sector: Oracle
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: PYTHUSDT
+    asset: PYTH
+    quote: USDT
+    sector: Oracle
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: API3USDT
+    asset: API3
+    quote: USDT
+    sector: Oracle
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: BANDUSDT
+    asset: BAND
+    quote: USDT
+    sector: Oracle
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: DOTUSDT
+    asset: DOT
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ATOMUSDT
+    asset: ATOM
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: NEARUSDT
+    asset: NEAR
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ICPUSDT
+    asset: ICP
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: APTUSDT
+    asset: APT
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: SEIUSDT
+    asset: SEI
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: TIAUSDT
+    asset: TIA
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: INJUSDT
+    asset: INJ
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: RUNEUSDT
+    asset: RUNE
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: KAVAUSDT
+    asset: KAVA
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ALGOUSDT
+    asset: ALGO
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: VETUSDT
+    asset: VET
+    quote: USDT
+    sector: Infra
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: THETAUSDT
+    asset: THETA
+    quote: USDT
+    sector: Infra
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: ZECUSDT
+    asset: ZEC
+    quote: USDT
+    sector: Privacy_ZK
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: DASHUSDT
+    asset: DASH
+    quote: USDT
+    sector: Privacy_ZK
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: MINAUSDT
+    asset: MINA
+    quote: USDT
+    sector: Privacy_ZK
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ZKUSDT
+    asset: ZK
+    quote: USDT
+    sector: Privacy_ZK
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: ZROUSDT
+    asset: ZRO
+    quote: USDT
+    sector: Privacy_ZK
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: WUSDT
+    asset: W
+    quote: USDT
+    sector: Solana_Eco
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: MEWUSDT
+    asset: MEW
+    quote: USDT
+    sector: Solana_Eco
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: POPCATUSDT
+    asset: POPCAT
+    quote: USDT
+    sector: Solana_Eco
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: PENGUUSDT
+    asset: PENGU
+    quote: USDT
+    sector: Solana_Eco
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: FARTCOINUSDT
+    asset: FARTCOIN
+    quote: USDT
+    sector: Solana_Eco
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: WALUSDT
+    asset: WAL
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: PARTIUSDT
+    asset: PARTI
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: SHELLUSDT
+    asset: SHELL
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: TUTUSDT
+    asset: TUT
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: KAITOUSDT
+    asset: KAITO
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: BERAUSDT
+    asset: BERA
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: IPUSDT
+    asset: IP
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: REDUSDT
+    asset: RED
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: HYPERUSDT
+    asset: HYPER
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: PUMPUSDT
+    asset: PUMP
+    quote: USDT
+    sector: New_Listings
+    enabled: true
+
+  - exchange: binance
+    market_type: futures
+    symbol: BNBUSDT
+    asset: BNB
+    quote: USDT
+    sector: CeFi
+    enabled: true
+  - exchange: binance
+    market_type: futures
+    symbol: TRBUSDT
+    asset: TRB
+    quote: USDT
+    sector: CeFi
+    enabled: true
+
+sectors:
+  Meme:
+    - DOGE
+    - SHIB
+    - PEPE
+    - FLOKI
+    - BONK
+    - WIF
+  AI:
+    - RENDER
+    - FET
+    - TAO
+    - WLD
+    - AKT
+    - NIL
+  RWA:
+    - ONDO
+    - SKY
+    - PENDLE
+    - CFG
+    - POLYX
+  Gaming:
+    - IMX
+    - RONIN
+    - GALA
+    - AXS
+    - SAND
+  L2:
+    - ARB
+    - OP
+    - POL
+    - STRK
+    - MANTA
+  Layer1:
+    - BTC
+    - ETH
+    - SOL
+    - ADA
+    - AVAX
+    - SUI
+  ETH_Beta:
+    - ETH
+    - LDO
+    - ENS
+    - ENA
+    - UNI
+    - EIGEN
+  DePIN:
+    - FIL
+    - IOTX
+    - AR
+    - JASMY
+    - GRASS
+  Payments:
+    - XRP
+    - LTC
+    - BCH
+    - XLM
+    - TRX
+    - ETC
+  DeFi:
+    - AAVE
+    - CRV
+    - COMP
+    - SUSHI
+    - YFI
+    - SNX
+    - LQTY
+    - GMX
+    - JTO
+    - JUP
+  Oracle:
+    - LINK
+    - PYTH
+    - API3
+    - BAND
+  Infra:
+    - DOT
+    - ATOM
+    - NEAR
+    - ICP
+    - APT
+    - SEI
+    - TIA
+    - INJ
+    - RUNE
+    - KAVA
+    - ALGO
+    - VET
+    - THETA
+  Privacy_ZK:
+    - ZEC
+    - DASH
+    - MINA
+    - ZK
+    - ZRO
+  Solana_Eco:
+    - SOL
+    - JUP
+    - PYTH
+    - W
+    - MEW
+    - POPCAT
+    - PENGU
+    - FARTCOIN
+    - GRASS
+  New_Listings:
+    - NIL
+    - WAL
+    - PARTI
+    - SHELL
+    - TUT
+    - KAITO
+    - BERA
+    - IP
+    - RED
+    - HYPER
+    - PUMP
+  CeFi:
+    - BNB
+    - TRB
