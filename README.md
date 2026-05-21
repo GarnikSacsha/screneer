@@ -4,6 +4,7 @@ Internal crypto anomaly screener prototype.
 
 ## What Exists Now
 
+- Agent handoff files: `CONTEXT.md`, `REQ.md`, `STATE.md`, `STATUS.md`
 - Static UI prototype: `index.html`, `styles.css`, `app.js`
 - Metric documentation: `METRICS.md`
 - Product/engineering spec: `ANOMALY_SCREENER_TZ.md`
@@ -79,3 +80,15 @@ Run only the liquidation stream collector, if Redis is available:
 ## Next Engineering Step
 
 Add a dedicated CVD trade WebSocket collector and auto-refresh controls in the UI.
+
+## New Agent Start
+
+When continuing this repo in a fresh agent chat, read these first:
+
+```text
+CONTEXT.md
+REQ.md
+STATE.md
+STATUS.md
+AGENT_HANDOFF.md
+```

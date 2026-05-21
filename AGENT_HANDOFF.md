@@ -36,6 +36,7 @@ Frontend:
 - Sector screener table
 - Detail panel with setup read
 - Outlier Radar
+- Outlier Radar scope toggle: `All Market` / `Selected Sector`
 - Outlook cockpit / confluence panel
 - Structured methodology block at the bottom of the page
 - Data-state labels: `Live`, `Cached`, `Unavailable`
@@ -67,6 +68,8 @@ Recent important fixes:
 - Added cache fallback and fixed BOM reading for `latest-preview.json`.
 - Fixed logic where stale scan responses could overwrite newer UI state.
 - Added daily FVG detection and display in `Outlier Radar` as `D1 FVG`.
+- Added Outlier Radar sector scoping so the radar can show global candidates or only candidates from the selected sector.
+- Fixed narrow viewport sector rows so `Signal` and `OI Delta` remain visible.
 - Current UI exposes daily FVG like:
   - `Bull test`
   - `Bear test`
@@ -179,7 +182,7 @@ Latest known green result:
 4. Add a quality ranking for “best pairs today” so junk is hidden by default.
 5. Improve orderbook-pressure logic across falling/rising price conditions.
 6. Add richer regression tests for UI payload assumptions and cached/live transitions.
-7. Initialize git if the owner wants reliable version history.
+7. Add authentication or a secure tunnel strategy before sharing the local app outside localhost.
 
 ## New Chat Starter Prompt
 
@@ -189,6 +192,7 @@ Paste this into a new chat:
 We are continuing my Quant Desk project from the existing workspace.
 First read AGENT_HANDOFF.md, then inspect README.md, index.html, app.js, styles.css,
 backend/app/ingestion/binance_snapshot.py, backend/app/metrics/engine.py and the backend tests.
+Also read CONTEXT.md, REQ.md, STATE.md and STATUS.md if they are present.
 
 Context:
 - This is a crypto perpetual-futures screener/terminal, not a marketing site.
