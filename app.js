@@ -648,6 +648,18 @@ async function loadApiPayload(mode = "core") {
   };
 }
 
+async function loadCachedPayload() {
+  const cached = await fetchJson("/cache/latest-preview", { timeoutMs: 5000 });
+  return {
+    universe: cached.universe || null,
+    marketMetrics: cached.market_metrics || [],
+    sectorMetrics: cached.sector_metrics || [],
+    events: cached.events || [],
+    errors: cached.errors || {},
+    source: "cache"
+  };
+}
+
 function latestTimestamp(items) {
   const timestamps = items
     .map((item) => Date.parse(item.ts))
@@ -691,6 +703,42 @@ function hasOrderBookMetrics(marketMetrics) {
   return marketMetrics.some((metric) => Number.isFinite(metric?.order_book_imbalance_pct));
 }
 
+function applyHydratedPayload(payload, previousSelectedName, previousSelectedOutlier, mode, options = {}) {
+  if (payload.source !== "cache" && (payload.marketMetrics.length < MIN_LIVE_MARKETS || !payload.sectorMetrics.length)) {
+    throw new Error("empty live metrics");
+  }
+
+  const liveSectors = buildLiveSectors(payload);
+  if (!liveSectors.length) {
+    throw new Error("empty live payload");
+  }
+
+  sectors = liveSectors;
+  activeUniverseMeta = payload.universe || null;
+  lastScanErrors = payload.errors || {};
+  selectedName = sectors.some((sector) => sector.name === previousSelectedName) ? previousSelectedName : sectors[0].name;
+  selectedOutlierSymbol = previousSelectedOutlier;
+
+  const scanCount = payload.universe?.scan_deep_markets;
+  const modeLabel = payload.source === "cache"
+    ? "Cached "
+    : payload.universe?.scan_unavailable
+    ? "Limited "
+    : mode === "full" ? `Full ${scanCount || ""} ` : mode === "expanded" ? `Expanded ${scanCount || ""} ` : "Live ";
+  renderSnapshotTime(latestTimestamp(payload.sectorMetrics), payload.marketMetrics.length ? modeLabel : `${modeLabel}pairs`);
+
+  const skippedCount = Object.keys(lastScanErrors).length;
+  if (payload.source === "cache") {
+    setLoadState("cache", options.refreshing ? `${payload.marketMetrics.length} cached pairs, refreshing` : `${payload.marketMetrics.length} cached pairs`);
+  } else {
+    setLoadState("live", skippedCount ? `Live, ${skippedCount} skipped` : `${payload.marketMetrics.length} pairs live`);
+  }
+
+  renderSignals();
+  renderRows();
+  renderOutlierRadar();
+}
+
 async function hydrateFromApi() {
   const mode = activeScanMode;
   const requestId = ++hydrateRequestId;
@@ -701,6 +749,18 @@ async function hydrateFromApi() {
   renderSignals();
   renderRows();
   renderOutlierRadar();
+
+  let renderedFallback = false;
+  if (mode === "core") {
+    try {
+      const cachedPayload = await loadCachedPayload();
+      if (requestId !== hydrateRequestId) return;
+      applyHydratedPayload(cachedPayload, previousSelectedName, previousSelectedOutlier, mode, { refreshing: true });
+      renderedFallback = true;
+    } catch (error) {
+      console.info("Quant Desk cached preview unavailable:", error);
+    }
+  }
 
   try {
     let payload = await loadApiPayload(mode);
@@ -719,39 +779,20 @@ async function hydrateFromApi() {
         universe: preview.universe || payload.universe,
         marketMetrics: preview.market_metrics,
         sectorMetrics: preview.sector_metrics,
-        events: preview.events
+        events: preview.events,
+        errors: preview.errors || {},
+        source: "live"
       };
     }
 
-    if (payload.source !== "cache" && (payload.marketMetrics.length < MIN_LIVE_MARKETS || !payload.sectorMetrics.length)) {
-      throw new Error("empty live metrics");
-    }
-
-    const liveSectors = buildLiveSectors(payload);
-    if (!liveSectors.length) {
-      throw new Error("empty live payload");
-    }
-
-    sectors = liveSectors;
-    activeUniverseMeta = payload.universe || null;
-    lastScanErrors = payload.errors || {};
-    selectedName = sectors.some((sector) => sector.name === previousSelectedName) ? previousSelectedName : sectors[0].name;
-    selectedOutlierSymbol = previousSelectedOutlier;
-    const scanCount = payload.universe?.scan_deep_markets;
-    const modeLabel = payload.source === "cache"
-      ? "Cached "
-      : payload.universe?.scan_unavailable
-      ? "Limited "
-      : mode === "full" ? `Full ${scanCount || ""} ` : mode === "expanded" ? `Expanded ${scanCount || ""} ` : "Live ";
-    renderSnapshotTime(latestTimestamp(payload.sectorMetrics), payload.marketMetrics.length ? modeLabel : `${modeLabel}pairs`);
-    const skippedCount = Object.keys(lastScanErrors).length;
-    if (payload.source === "cache") {
-      setLoadState("cache", `${payload.marketMetrics.length} cached pairs`);
-    } else {
-      setLoadState("live", skippedCount ? `Live, ${skippedCount} skipped` : `${payload.marketMetrics.length} pairs live`);
-    }
+    applyHydratedPayload(payload, previousSelectedName, previousSelectedOutlier, mode);
   } catch (error) {
     if (requestId !== hydrateRequestId) return;
+    if (renderedFallback) {
+      setLoadState("cache", `${sectors.flatMap((sector) => sector.tokens).length} cached pairs, live unavailable`);
+      console.info("Quant Desk live refresh unavailable:", error);
+      return;
+    }
     sectors = [];
     activeUniverseMeta = null;
     lastScanErrors = {};
