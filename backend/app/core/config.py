@@ -32,6 +32,12 @@ class Settings(BaseSettings):
 
     binance_futures_base_url: str = "https://fapi.binance.com"
     binance_futures_ws_url: str = "wss://fstream.binance.com/ws"
+    binance_preview_concurrency: int = 2
+    binance_parallel_symbol_requests: bool = False
+    binance_request_pause_ms: int = 250
+    binance_enable_orderbook: bool = False
+    binance_klines_5m_limit: int = 288
+    binance_ema_klines_limit: int = 120
     bybit_base_url: str = "https://api.bybit.com"
     okx_base_url: str = "https://www.okx.com"
 

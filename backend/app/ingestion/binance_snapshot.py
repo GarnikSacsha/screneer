@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from app.core.config import get_settings
 from app.domain.entities import Candle
 from app.exchanges.binance import BinanceFuturesAdapter
 from app.metrics.engine import MarketMetricInput
@@ -305,15 +306,52 @@ async def fetch_binance_market_snapshot(
     adapter: BinanceFuturesAdapter | None = None,
 ) -> BinanceMarketSnapshot:
     adapter = adapter or BinanceFuturesAdapter()
-    klines_result, open_interest_result, ticker_result, klines_4h_result, klines_1d_result, order_book_result = await asyncio.gather(
-        adapter.get_klines(symbol=symbol, interval="5m", limit=288),
-        adapter.get_open_interest(symbol),
-        adapter.get_24h_ticker(symbol),
-        adapter.get_klines(symbol=symbol, interval="4h", limit=200),
-        adapter.get_klines(symbol=symbol, interval="1d", limit=200),
-        adapter.get_order_book(symbol=symbol, limit=100),
-        return_exceptions=True,
+    settings = get_settings()
+    klines_5m_limit = max(16, settings.binance_klines_5m_limit)
+    ema_klines_limit = max(100, settings.binance_ema_klines_limit)
+    pause_seconds = max(0, settings.binance_request_pause_ms) / 1000
+
+    async def capture(coro: Any) -> Any:
+        try:
+            return await coro
+        except Exception as exc:
+            return exc
+
+    async def pause() -> None:
+        if pause_seconds:
+            await asyncio.sleep(pause_seconds)
+
+    async def no_order_book() -> None:
+        return None
+
+    order_book_request = (
+        adapter.get_order_book(symbol=symbol, limit=100)
+        if settings.binance_enable_orderbook
+        else no_order_book()
     )
+
+    if settings.binance_parallel_symbol_requests:
+        klines_result, open_interest_result, ticker_result, klines_4h_result, klines_1d_result, order_book_result = await asyncio.gather(
+            adapter.get_klines(symbol=symbol, interval="5m", limit=klines_5m_limit),
+            adapter.get_open_interest(symbol),
+            adapter.get_24h_ticker(symbol),
+            adapter.get_klines(symbol=symbol, interval="4h", limit=ema_klines_limit),
+            adapter.get_klines(symbol=symbol, interval="1d", limit=ema_klines_limit),
+            order_book_request,
+            return_exceptions=True,
+        )
+    else:
+        klines_result = await capture(adapter.get_klines(symbol=symbol, interval="5m", limit=klines_5m_limit))
+        await pause()
+        open_interest_result = await capture(adapter.get_open_interest(symbol))
+        await pause()
+        ticker_result = await capture(adapter.get_24h_ticker(symbol))
+        await pause()
+        klines_4h_result = await capture(adapter.get_klines(symbol=symbol, interval="4h", limit=ema_klines_limit))
+        await pause()
+        klines_1d_result = await capture(adapter.get_klines(symbol=symbol, interval="1d", limit=ema_klines_limit))
+        await pause()
+        order_book_result = await capture(order_book_request)
 
     if isinstance(klines_result, Exception):
         raise klines_result
@@ -330,6 +368,7 @@ async def fetch_binance_market_snapshot(
     order_book = None if isinstance(order_book_result, Exception) else order_book_result
 
     try:
+        await pause()
         open_interest_history = await adapter.get_open_interest_history(symbol=symbol, period="5m", limit=4)
     except Exception:
         open_interest_history = []
@@ -343,6 +382,7 @@ async def fetch_binance_market_snapshot(
     previous_24h = closed[0] if len(closed) >= 288 else None
 
     last_price = _float_or_none(ticker.get("lastPrice")) if isinstance(ticker, dict) else None
+    open_price_24h = _float_or_none(ticker.get("openPrice")) if isinstance(ticker, dict) else None
     price_for_oi = last_price or (latest.close if latest else None)
 
     oi_contracts_now = _float_or_none(open_interest.get("openInterest"))
@@ -373,7 +413,7 @@ async def fetch_binance_market_snapshot(
         close_5m_ago=previous_5m.close if previous_5m else None,
         close_15m_ago=previous_15m.close if previous_15m else None,
         close_1h_ago=previous_1h.close if previous_1h else None,
-        close_24h_ago=previous_24h.close if previous_24h else None,
+        close_24h_ago=previous_24h.close if previous_24h else open_price_24h,
         quote_volume_5m=latest.quote_volume if latest else None,
         quote_volume_5m_history=[candle.quote_volume for candle in closed[:-1]],
         quote_volume_15m=quote_volume_15m,

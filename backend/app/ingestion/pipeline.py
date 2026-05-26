@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.anomalies.rules import detect_market_anomalies, detect_sector_anomalies
-from app.core.config import load_thresholds, load_universe
+from app.core.config import get_settings, load_thresholds, load_universe
 from app.db.bootstrap import create_schema, seed_universe
 from app.db.repositories import (
     insert_anomaly_events,
@@ -163,8 +163,9 @@ async def run_binance_snapshot(
     universe = universe_override or load_universe()
     thresholds = load_thresholds()
     markets = enabled_binance_markets(universe)
-    preview_concurrency = 4 if len(markets) > 150 else 6
-    snapshots, errors = await _fetch_snapshots(markets, concurrency=preview_concurrency if not persist_db else 4)
+    settings = get_settings()
+    preview_concurrency = max(1, settings.binance_preview_concurrency)
+    snapshots, errors = await _fetch_snapshots(markets, concurrency=preview_concurrency if not persist_db else min(4, preview_concurrency))
     liquidation_windows = await _load_liquidation_windows(markets) if read_flow_redis else {}
 
     base_metrics_by_symbol = {
