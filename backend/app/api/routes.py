@@ -122,7 +122,7 @@ async def binance_preview(mode: str = "core") -> SnapshotPreviewResponse:
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Preview failed: {type(exc).__name__}: {exc}") from exc
 
-    return SnapshotPreviewResponse(
+    response = SnapshotPreviewResponse(
         ts=result.ts,
         universe=universe,
         market_metrics=[MarketMetricsResponse(**item.__dict__) for item in result.market_metrics],
@@ -130,3 +130,6 @@ async def binance_preview(mode: str = "core") -> SnapshotPreviewResponse:
         events=[AnomalyEventResponse(**event.__dict__) for event in result.events],
         errors=result.errors,
     )
+    if mode == "core" and response.market_metrics and response.sector_metrics:
+        CACHE_PATH.write_text(json.dumps(response.model_dump(mode="json"), ensure_ascii=False), encoding="utf-8")
+    return response
