@@ -277,7 +277,9 @@ const snapshotStatus = document.querySelector("#snapshotStatus");
 const refreshButton = document.querySelector("#refreshButton");
 const appShell = document.querySelector(".desk-shell");
 
-const API_BASE = window.QUANT_DESK_API_BASE || "http://127.0.0.1:8000/api";
+const API_BASE = window.QUANT_DESK_API_BASE || (
+  window.location.port === "5500" ? "http://127.0.0.1:8000/api" : `${window.location.origin}/api`
+);
 const OI_HEAVY_USD = 1000000000;
 const MIN_LIVE_MARKETS = 10;
 
