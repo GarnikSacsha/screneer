@@ -294,6 +294,7 @@ let loadState = "idle";
 let loadMessage = "Starting";
 let lastScanErrors = {};
 let hydrateRequestId = 0;
+let hydrateInFlight = false;
 
 const metricDocs = [
   {
@@ -671,6 +672,13 @@ function latestTimestamp(items) {
   return new Date(Math.max(...timestamps));
 }
 
+function syncRefreshButton() {
+  if (refreshButton) {
+    refreshButton.disabled = hydrateInFlight || loadState === "loading";
+    refreshButton.textContent = hydrateInFlight ? "Scanning" : "Refresh";
+  }
+}
+
 function setLoadState(state, message = "") {
   loadState = state;
   loadMessage = message;
@@ -680,10 +688,12 @@ function setLoadState(state, message = "") {
   if (snapshotStatus) {
     snapshotStatus.textContent = message;
   }
-  if (refreshButton) {
-    refreshButton.disabled = state === "loading";
-    refreshButton.textContent = state === "loading" ? "Scanning" : "Refresh";
-  }
+  syncRefreshButton();
+}
+
+function finishHydration() {
+  hydrateInFlight = false;
+  syncRefreshButton();
 }
 
 function renderSnapshotTime(date, label = "") {
@@ -742,6 +752,9 @@ function applyHydratedPayload(payload, previousSelectedName, previousSelectedOut
 }
 
 async function hydrateFromApi() {
+  if (hydrateInFlight) return;
+  hydrateInFlight = true;
+  syncRefreshButton();
   const mode = activeScanMode;
   const requestId = ++hydrateRequestId;
   const previousSelectedName = selectedName;
@@ -756,7 +769,10 @@ async function hydrateFromApi() {
   if (mode === "core") {
     try {
       const cachedPayload = await loadCachedPayload();
-      if (requestId !== hydrateRequestId) return;
+      if (requestId !== hydrateRequestId) {
+        finishHydration();
+        return;
+      }
       applyHydratedPayload(cachedPayload, previousSelectedName, previousSelectedOutlier, mode, { refreshing: true });
       renderedFallback = true;
     } catch (error) {
@@ -766,7 +782,10 @@ async function hydrateFromApi() {
 
   try {
     let payload = await loadApiPayload(mode);
-    if (requestId !== hydrateRequestId) return;
+    if (requestId !== hydrateRequestId) {
+      finishHydration();
+      return;
+    }
 
     const needsPreview =
       payload.marketMetrics.length < MIN_LIVE_MARKETS ||
@@ -776,7 +795,10 @@ async function hydrateFromApi() {
     if (needsPreview) {
       renderSnapshotTime(null, "Previewing");
       const preview = await fetchJson(`/ingestion/binance/preview?mode=${encodeURIComponent(mode)}`, { method: "POST", timeoutMs: mode === "full" ? 240000 : 180000 });
-      if (requestId !== hydrateRequestId) return;
+      if (requestId !== hydrateRequestId) {
+        finishHydration();
+        return;
+      }
       payload = {
         universe: preview.universe || payload.universe,
         marketMetrics: preview.market_metrics,
@@ -789,10 +811,14 @@ async function hydrateFromApi() {
 
     applyHydratedPayload(payload, previousSelectedName, previousSelectedOutlier, mode);
   } catch (error) {
-    if (requestId !== hydrateRequestId) return;
+    if (requestId !== hydrateRequestId) {
+      finishHydration();
+      return;
+    }
     if (renderedFallback) {
       setLoadState("cache", `${sectors.flatMap((sector) => sector.tokens).length} cached pairs, live unavailable`);
       console.info("Quant Desk live refresh unavailable:", error);
+      finishHydration();
       return;
     }
     sectors = [];
@@ -808,6 +834,8 @@ async function hydrateFromApi() {
   renderSignals();
   renderRows();
   renderOutlierRadar();
+
+  finishHydration();
 }
 
 let selectedName = null;
