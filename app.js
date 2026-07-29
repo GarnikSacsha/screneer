@@ -265,6 +265,10 @@ const outlookEmaZones = document.querySelector("#outlookEmaZones");
 const outlookConfluenceList = document.querySelector("#outlookConfluenceList");
 const outlookBullish = document.querySelector("#outlookBullish");
 const outlookBearish = document.querySelector("#outlookBearish");
+const riskAgentPanel = document.querySelector("#riskAgentPanel");
+const riskAgentButton = document.querySelector("#riskAgentButton");
+const riskAgentStatus = document.querySelector("#riskAgentStatus");
+const riskAgentOutput = document.querySelector("#riskAgentOutput");
 const searchInput = document.querySelector("#searchInput");
 const sortSelect = document.querySelector("#sortSelect");
 const scanModeSelect = document.querySelector("#scanModeSelect");
@@ -295,6 +299,10 @@ let loadMessage = "Starting";
 let lastScanErrors = {};
 let hydrateRequestId = 0;
 let hydrateInFlight = false;
+let activeOutlookCandidate = null;
+let riskAgentTargetKey = null;
+let riskAgentRequestId = 0;
+let riskAgentInFlight = false;
 
 const metricDocs = [
   {
@@ -422,6 +430,15 @@ const SECTOR_META = {
 
 function numberOr(value, fallback = 0) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function displayPriceForMarket(asset, marketSymbol, price) {
@@ -886,7 +903,7 @@ function getSignal(sector) {
     (oiChange > 0.75 && cvd > 0 && perf5m >= -0.8) ||
     (cvd > 0 && perf1h > 0 && longPct >= shortPct)
   ) {
-    return { side: "long", label: "LONG", symbol: "▲", className: "signal-long" };
+    return { side: "long", label: "LONG", symbol: "^", className: "signal-long" };
   }
 
   if (
@@ -897,7 +914,7 @@ function getSignal(sector) {
     return { side: "short", label: "SHORT", symbol: "▼", className: "signal-short" };
   }
 
-  return { side: "unclear", label: "UNCLEAR", symbol: "△", className: "signal-unclear" };
+  return { side: "unclear", label: "UNCLEAR", symbol: "?", className: "signal-unclear" };
 }
 
 function getSectorExchanges(sector) {
@@ -955,14 +972,14 @@ function getPairSignal(token, sector) {
   const perf1h = numberOr(token.perf1h, numberOr(sector.perf1h));
 
   if ((cvd > 0 && oiChange > 0.25 && perf5m >= -0.6) || (flow.longPct >= 58 && perf1h > 0)) {
-    return { side: "long", label: "LONG", symbol: "▲", className: "signal-long" };
+    return { side: "long", label: "LONG", symbol: "^", className: "signal-long" };
   }
 
   if ((cvd < 0 && oiChange < -0.25) || (flow.shortPct >= 58 && perf1h < 0)) {
     return { side: "short", label: "SHORT", symbol: "▼", className: "signal-short" };
   }
 
-  return { side: "unclear", label: "WAIT", symbol: "△", className: "signal-unclear" };
+  return { side: "unclear", label: "WAIT", symbol: "?", className: "signal-unclear" };
 }
 
 function volumeTo24hPct(volume5m, volume24h) {
@@ -1154,8 +1171,8 @@ function renderSignals() {
       .map(
         ([cardLabel, value, tone]) => `
           <div class="signal-card signal-card-${tone}">
-            <span>${cardLabel}</span>
-            <strong>${value}</strong>
+            <span>${escapeHtml(cardLabel)}</span>
+            <strong>${escapeHtml(value)}</strong>
           </div>
         `
       )
@@ -1183,8 +1200,8 @@ function renderSignals() {
     .map(
       ([label, value, tone]) => `
         <div class="signal-card signal-card-${tone}">
-          <span>${label}</span>
-          <strong>${value}</strong>
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
         </div>
       `
     )
@@ -1502,6 +1519,7 @@ function buildOutlierCandidates() {
 
       const candidate = {
         symbol: token.symbol,
+        marketSymbol: token.marketSymbol,
         sector: sector.name,
         price,
         displayPrice: token.displayPrice ?? price,
@@ -1590,7 +1608,7 @@ function renderOutlierRadar() {
     outlierRows.innerHTML = `
       <div class="outlier-empty" role="row">
         <strong>${loading ? "Scanning outliers" : "No outliers yet"}</strong>
-        <span>${loading ? "Live Binance data is loading. Core scan usually takes 20-30 seconds." : selectedSector ? `No ${selectedSector.name} pairs pass the radar filter yet.` : "Waiting for relative strength, OI, CVD or volume confirmation."}</span>
+        <span>${loading ? "Live Binance data is loading. Core scan usually takes 20-30 seconds." : selectedSector ? `No ${escapeHtml(selectedSector.name)} pairs pass the radar filter yet.` : "Waiting for relative strength, OI, CVD or volume confirmation."}</span>
       </div>
     `;
     renderOutlookCockpit([]);
@@ -1604,12 +1622,12 @@ function renderOutlierRadar() {
   outlierRows.innerHTML = candidates
     .map(
       (candidate) => `
-        <button class="outlier-row${candidate.symbol === selectedOutlierSymbol ? " is-selected" : ""}" type="button" data-symbol="${candidate.symbol}" role="row">
+        <button class="outlier-row${candidate.symbol === selectedOutlierSymbol ? " is-selected" : ""}" type="button" data-symbol="${escapeHtml(candidate.symbol)}" role="row">
           <span class="outlier-asset" role="cell">
-            <strong>${candidate.symbol}</strong>
-            <small>${candidate.sector}</small>
+            <strong>${escapeHtml(candidate.symbol)}</strong>
+            <small>${escapeHtml(candidate.sector)}</small>
           </span>
-          <span role="cell"><b class="stage-badge ${candidate.className}">${candidate.label}</b></span>
+          <span role="cell"><b class="stage-badge ${candidate.className}">${escapeHtml(candidate.label)}</b></span>
           <span role="cell"><b class="score-pill">${candidate.score}</b></span>
           <span role="cell"><b class="volume-ratio">${formatVolumeRatio(candidate.volumeTo24h)}</b></span>
           <span role="cell"><b class="volume-ratio">${formatPct(candidate.baseDistance)}</b></span>
@@ -1621,7 +1639,7 @@ function renderOutlierRadar() {
           <span class="${signedClass(candidate.rs24h)}" role="cell">${formatPct(candidate.rs24h)}</span>
           <span class="${signedClass(candidate.oiChange)}" role="cell">${formatPct(candidate.oiChange)}</span>
           <span class="${signedClass(candidate.flowUsd)}" role="cell">${activeHorizon === "intrawick" ? formatPct(candidate.flowIntensity) : formatMoney(candidate.flowUsd)}</span>
-          <span class="outlier-read" role="cell">${candidate.read}</span>
+          <span class="outlier-read" role="cell">${escapeHtml(candidate.read)}</span>
         </button>
       `
     )
@@ -1764,6 +1782,8 @@ function renderOutlookCockpit(candidates) {
   const candidate = candidates.find((item) => item.symbol === selectedOutlierSymbol) || candidates[0];
 
   if (!candidate) {
+    activeOutlookCandidate = null;
+    syncRiskAnalyst(null);
     outlookAsset.textContent = "-";
     outlookSubtitle.textContent = loadState === "loading" ? "Scanning live data" : "No active outlier candidate";
     outlookConfluence.textContent = "0/6";
@@ -1779,6 +1799,8 @@ function renderOutlookCockpit(candidates) {
     return;
   }
 
+  activeOutlookCandidate = candidate;
+  syncRiskAnalyst(candidate);
   const checks = getConfluenceChecks(candidate);
   const passedCount = checks.filter((item) => item.passed).length;
   const levels = getOutlookLevels(candidate);
@@ -1796,7 +1818,7 @@ function renderOutlookCockpit(candidates) {
     .map(
       ([label, value]) => `
         <div class="level-tile">
-          <span>${label}</span>
+          <span>${escapeHtml(label)}</span>
           <strong>${formatLevel(value)}</strong>
         </div>
       `
@@ -1807,7 +1829,7 @@ function renderOutlookCockpit(candidates) {
     .map(
       (zone) => `
         <div class="ema-tile ${Number.isFinite(zone.distance) && zone.distance >= 0 ? "is-support" : ""}">
-          <span>${zone.label}</span>
+          <span>${escapeHtml(zone.label)}</span>
           <strong>${formatLevel(zone.value)}</strong>
           <small>${formatEmaDistance(zone.distance)}</small>
         </div>
@@ -1820,8 +1842,8 @@ function renderOutlookCockpit(candidates) {
       (item) => `
         <div class="check-item ${item.passed ? "is-confirmed" : ""}">
           <i>${item.passed ? "OK" : "WAIT"}</i>
-          <span>${item.label}</span>
-          <strong>${item.value}</strong>
+          <span>${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.value)}</strong>
         </div>
       `
     )
@@ -1834,7 +1856,7 @@ function renderOutlookCockpit(candidates) {
     "Prefer bid-side orderbook pressure while price holds above support.",
     "Respect 4H/1D EMA zones as support on pullbacks."
   ]
-    .map((item) => `<li>${item}</li>`)
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
     .join("");
 
   outlookBearish.innerHTML = [
@@ -1844,8 +1866,119 @@ function renderOutlookCockpit(candidates) {
     "Ask walls dominate while price fails to reclaim the breakout level.",
     candidate.liqPct >= 8 ? "Liquidation pressure is already hot." : "LIQ pressure spikes above the current zone."
   ]
-    .map((item) => `<li>${item}</li>`)
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
     .join("");
+}
+
+function syncRiskAnalyst(candidate) {
+  if (!riskAgentPanel || !riskAgentButton || !riskAgentOutput || !riskAgentStatus) return;
+  const nextKey = candidate ? `${candidate.marketSymbol || candidate.symbol}:${activeHorizon}` : null;
+  if (nextKey === riskAgentTargetKey) {
+    riskAgentButton.disabled = !candidate || riskAgentInFlight;
+    return;
+  }
+
+  riskAgentTargetKey = nextKey;
+  riskAgentRequestId += 1;
+  riskAgentInFlight = false;
+  riskAgentButton.disabled = !candidate;
+  riskAgentButton.textContent = "Generate risk brief";
+  riskAgentStatus.textContent = candidate
+    ? `${candidate.marketSymbol || candidate.symbol} / ${activeHorizon} / human review required`
+    : "Select an outlier and request an evidence-grounded brief.";
+  riskAgentOutput.className = "risk-agent-empty";
+  riskAgentOutput.textContent = candidate
+    ? "Ready. The agent will use the latest server-owned snapshot and the local risk playbook."
+    : "The agent can read market evidence but cannot place trades or bypass human review.";
+}
+
+function renderRiskAgentBrief(brief) {
+  if (!riskAgentOutput || !riskAgentStatus || !riskAgentButton) return;
+  const trace = brief.trace || {};
+  const providerLabel = trace.provider === "openai"
+    ? `${trace.model || "OpenAI"}`
+    : "deterministic safety fallback";
+  const strengths = brief.strengths?.length ? brief.strengths : ["No confirmed strengths in the current evidence."];
+  const risks = brief.risks?.length ? brief.risks : ["No material risk detail was returned."];
+  const watch = brief.watch_conditions?.length ? brief.watch_conditions : [];
+  const toolTrace = (trace.tool_calls || [])
+    .map((tool) => `<span>${escapeHtml(tool.name)} · ${escapeHtml(tool.status)}</span>`)
+    .join("");
+
+  riskAgentStatus.textContent = `${brief.symbol} / ${providerLabel} / ${trace.duration_ms || 0}ms`;
+  riskAgentOutput.className = "risk-agent-result";
+  riskAgentOutput.innerHTML = `
+    <div class="risk-agent-summary">
+      <div>
+        <span class="risk-agent-kicker">${escapeHtml(brief.regime?.replaceAll("_", " ") || "unclear")}</span>
+        <h4>${escapeHtml(brief.summary)}</h4>
+      </div>
+      <div class="risk-agent-verdict risk-${escapeHtml(brief.risk_level)}">
+        <strong>${escapeHtml(brief.risk_level)}</strong>
+        <span>${Math.round((brief.confidence || 0) * 100)}% confidence</span>
+      </div>
+    </div>
+    <div class="risk-agent-grid">
+      <section>
+        <h5>Observed strengths</h5>
+        <ul>${strengths.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </section>
+      <section>
+        <h5>Risks</h5>
+        <ul>${risks.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </section>
+      <section>
+        <h5>Watch conditions</h5>
+        <ul>${watch.map((item) => `<li>${escapeHtml(item)}</li>`).join("") || "<li>Refresh the evidence before review.</li>"}</ul>
+      </section>
+    </div>
+    <div class="risk-agent-trace">
+      ${toolTrace}
+      <span>snapshot ${Number(brief.snapshot_age_minutes || 0).toFixed(1)}m old</span>
+      <span>execution disabled</span>
+    </div>
+    <p class="risk-agent-disclaimer">${escapeHtml(brief.disclaimer)}</p>
+  `;
+  riskAgentButton.disabled = false;
+  riskAgentButton.textContent = "Refresh risk brief";
+}
+
+async function generateRiskBrief() {
+  if (!activeOutlookCandidate || !riskAgentButton || !riskAgentOutput || !riskAgentStatus) return;
+  const candidate = activeOutlookCandidate;
+  const targetKey = `${candidate.marketSymbol || candidate.symbol}:${activeHorizon}`;
+  const requestId = ++riskAgentRequestId;
+  riskAgentInFlight = true;
+  riskAgentButton.disabled = true;
+  riskAgentButton.textContent = "Analyzing";
+  riskAgentStatus.textContent = "Running bounded read-only tools…";
+  riskAgentOutput.className = "risk-agent-empty is-loading";
+  riskAgentOutput.textContent = "Reading the materialized snapshot and retrieving applicable risk policy.";
+
+  try {
+    const brief = await fetchJson("/agent/risk-brief", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        symbol: candidate.marketSymbol || candidate.symbol,
+        horizon: activeHorizon
+      }),
+      timeoutMs: 45000
+    });
+    if (requestId !== riskAgentRequestId || targetKey !== riskAgentTargetKey) return;
+    renderRiskAgentBrief(brief);
+  } catch (error) {
+    if (requestId !== riskAgentRequestId || targetKey !== riskAgentTargetKey) return;
+    riskAgentStatus.textContent = "Risk brief unavailable";
+    riskAgentOutput.className = "risk-agent-empty is-error";
+    riskAgentOutput.textContent = `The read-only agent could not complete: ${error.message}. Refresh the market snapshot and retry.`;
+    riskAgentButton.disabled = false;
+    riskAgentButton.textContent = "Retry risk brief";
+  } finally {
+    if (requestId === riskAgentRequestId) {
+      riskAgentInFlight = false;
+    }
+  }
 }
 
 function renderDocs() {
@@ -1853,10 +1986,10 @@ function renderDocs() {
     .map(
       (doc) => `
         <article class="doc-card">
-          <h3>${doc.title}</h3>
-          <p>${doc.read}</p>
-          <code>${doc.formula}</code>
-          <span class="doc-source">${doc.source}</span>
+          <h3>${escapeHtml(doc.title)}</h3>
+          <p>${escapeHtml(doc.read)}</p>
+          <code>${escapeHtml(doc.formula)}</code>
+          <span class="doc-source">${escapeHtml(doc.source)}</span>
         </article>
       `
     )
@@ -1904,9 +2037,9 @@ function renderRows() {
       const exchanges = getSectorExchanges(sector);
 
       return `
-        <button class="screener-row${selected}" type="button" data-sector="${sector.name}" role="row">
+        <button class="screener-row${selected}" type="button" data-sector="${escapeHtml(sector.name)}" role="row">
           <span class="sector-cell" role="cell">
-            <strong>${sector.name}</strong>
+            <strong>${escapeHtml(sector.name)}</strong>
             <small>${sector.tokens.length} members <em class="${signedClass(sector.perf24h)}">24H ${formatPct(sector.perf24h)}</em></small>
           </span>
           <span role="cell">${numberOr(sector.index).toFixed(2)}</span>
@@ -1923,7 +2056,7 @@ function renderRows() {
             <b>${formatMoney(cvd)}</b>
           </span>
           <span class="exchange-cell" role="cell">
-            ${exchanges.map((exchange) => `<b>${exchange}</b>`).join("")}
+            ${exchanges.map((exchange) => `<b>${escapeHtml(exchange)}</b>`).join("")}
           </span>
         </button>
       `;
@@ -1998,7 +2131,7 @@ function renderDetail(sector) {
   document.querySelector("#memberCount").textContent = `${sector.tokens.length} members`;
 
   memberChips.innerHTML = sector.tokens
-    .map((token) => `<span class="member-chip">${token.symbol}</span>`)
+    .map((token) => `<span class="member-chip">${escapeHtml(token.symbol)}</span>`)
     .join("");
 
   tokenRows.innerHTML = sector.tokens
@@ -2011,7 +2144,7 @@ function renderDetail(sector) {
 
         return `
           <div class="token-row" role="row">
-            <span role="cell">${token.symbol}</span>
+            <span role="cell">${escapeHtml(token.symbol)}</span>
             <span role="cell"><b class="pair-signal ${pairSignal.className}" title="${pairFlow.source === "pair" ? "Pair liquidation split" : "Derived from pair flow + sector split"}">${pairSignal.symbol} ${pairSignal.label}</b></span>
             <span role="cell">${formatPrice(token.displayPrice ?? token.price)}</span>
             <span class="pair-ls-cell" role="cell">
@@ -2057,6 +2190,10 @@ scanModeSelect?.addEventListener("change", () => {
 
 refreshButton?.addEventListener("click", () => {
   hydrateFromApi();
+});
+
+riskAgentButton?.addEventListener("click", () => {
+  generateRiskBrief();
 });
 
 horizonSelect?.addEventListener("change", () => {

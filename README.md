@@ -1,94 +1,173 @@
 # Quant Desk
 
-Internal crypto anomaly screener prototype.
+AI-assisted crypto risk intelligence for Binance USD-M perpetual futures.
 
-## What Exists Now
+Quant Desk turns noisy market telemetry into a ranked, evidence-backed workspace. It combines sector rotation, open-interest changes, flow proxies, liquidity, liquidations, market structure, and anomaly rules in one terminal-style interface. A bounded AI Risk Analyst can summarize a selected market, but it cannot recommend or execute a trade.
 
-- Agent handoff files: `CONTEXT.md`, `REQ.md`, `STATE.md`, `STATUS.md`
-- Static UI prototype: `index.html`, `styles.css`, `app.js`
-- Metric documentation: `METRICS.md`
-- Product/engineering spec: `ANOMALY_SCREENER_TZ.md`
-- Backend MVP: `backend/`
-- Live universe and thresholds: `config/universe.yaml`, `config/thresholds.yaml`
+## Why this project exists
 
-## Open UI
+Crypto derivatives dashboards often surface hundreds of disconnected metrics. Quant Desk answers a narrower question:
 
-With the local servers running:
+> Which sectors and markets deserve a human analyst's attention right now, and what could invalidate that view?
 
-```text
-http://127.0.0.1:5500/index.html
+The product emphasizes:
+
+- sector and pair-level relative strength;
+- early anomaly detection rather than retrospective winners;
+- explicit data freshness and fallback states;
+- evidence-linked AI output with a visible execution boundary;
+- resilient degradation when Binance, Redis, PostgreSQL, or OpenAI is unavailable.
+
+## Product capabilities
+
+- **Sector Screener** ranks baskets by price, volume, OI, CVD, liquidation, and participation signals.
+- **Outlier Radar** finds pair-level deviations across the full market or inside the selected sector.
+- **Outlook Cockpit** exposes the underlying evidence for the selected candidate.
+- **AI Risk Analyst** produces a structured `monitor`, `avoid`, or `needs_context` brief.
+- **Live ingestion** collects Binance REST snapshots and liquidation WebSocket events.
+- **Materialized cache** keeps the UI usable when live providers are unavailable.
+- **Audit trace** records model/provider, latency, token usage, tool calls, safety flags, and fallback reason.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    B["Binance USD-M<br/>REST + WebSocket"] --> I["Async ingestion<br/>and normalization"]
+    I --> M["Metric + anomaly engine"]
+    M --> P[("PostgreSQL<br/>history")]
+    M --> R[("Redis<br/>latest state")]
+    M --> C["Materialized preview cache"]
+    R --> A["FastAPI"]
+    C --> A
+    A --> U["Terminal UI"]
+    U --> G["Risk Analyst API"]
+    G --> T1["Read-only snapshot tool"]
+    G --> T2["Bounded playbook retrieval"]
+    T1 --> O["OpenAI Responses API"]
+    T2 --> O
+    O --> S["Strict structured brief<br/>+ audit trace"]
+    S --> U
 ```
 
-Or double-click:
+## Bounded AI workflow
 
-```text
-open_quant_desk.cmd
+The Risk Analyst is intentionally decision-support, not an execution agent.
+
+1. The server resolves the requested symbol against its own cached snapshot.
+2. The model can call exactly two allow-listed, read-only tools:
+   - `get_market_snapshot`
+   - `retrieve_risk_playbook`
+3. Tool arguments are validated against the approved symbol and horizon.
+4. The final response is parsed into a strict Pydantic schema.
+5. Server-side safety validation rejects execution language and unknown evidence IDs.
+6. Stale data, a missing API key, provider failure, or invalid model output triggers a deterministic fallback.
+
+Every response sets:
+
+```json
+{
+  "requires_human_review": true,
+  "execution_allowed": false
+}
 ```
 
-## Backend MVP
+The model never receives credentials, never writes market state, and has no exchange execution tool.
 
-The backend has a Binance Futures snapshot and flow pipeline:
+## Security baseline
 
-- creates PostgreSQL tables and seeds `config/universe.yaml`
-- fetches 5m candles, 24h ticker and open interest
-- calculates price performance, volume spike, OI, kline-derived CVD and sector metrics
-- collects liquidation events from Binance `!forceOrder@arr` into Redis
-- detects anomaly events
-- writes latest state to Redis and historical snapshots to PostgreSQL
+Quant Desk is safe by default for localhost evaluation and fails closed around costly operations in production:
 
-With Docker installed:
+- staging and production require `ADMIN_API_KEY` for live universe discovery, ingestion, and AI analysis;
+- protected endpoints have a small per-process request budget;
+- CORS origins and trusted hosts are explicit;
+- CSP, anti-framing, MIME-sniffing, referrer, permissions, and cache headers are set centrally;
+- upstream strings are escaped before dynamic HTML insertion;
+- provider exceptions are logged internally and normalized in API responses;
+- Docker binds the API, Redis, and PostgreSQL to loopback;
+- CI runs tests, Ruff, dependency consistency, and frontend syntax validation;
+- Dependabot tracks Python and GitHub Actions updates.
+
+The shared admin key is a portfolio safeguard, not a replacement for user authentication. An internet deployment still needs TLS, real identity and authorization, and distributed rate limiting. See [SECURITY.md](SECURITY.md) for the threat model and deployment requirements.
+
+## Technology
+
+| Layer | Stack |
+| --- | --- |
+| API and agent orchestration | Python, FastAPI, Pydantic, OpenAI Responses API |
+| Market ingestion | asyncio, HTTPX, WebSockets |
+| State and history | Redis, PostgreSQL, SQLAlchemy |
+| Configuration | Pydantic Settings, YAML |
+| Frontend | HTML, CSS, vanilla JavaScript |
+| Quality | Pytest, Ruff |
+| Runtime | Docker Compose |
+
+## Quick start
+
+### Local demo
+
+Python 3.10+ and Node.js are sufficient for the cached-data demo.
 
 ```powershell
-cd "C:\Users\Денис\Desktop\quant desk"
-copy .env.example .env
+git clone https://github.com/GarnikSacsha/screneer.git
+cd screneer
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -e ".\backend[dev]"
+Copy-Item .env.example .env
+.\.venv\Scripts\python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+```
+
+Open `http://127.0.0.1:8000`.
+
+The Risk Analyst works without an OpenAI key through the deterministic audited fallback. To enable the model-backed path, set `OPENAI_API_KEY` in `.env`. Never commit the key.
+
+For staging or production, set `APP_ENV=production`, replace `POSTGRES_PASSWORD`, configure explicit `ALLOWED_ORIGINS` and `ALLOWED_HOSTS`, and generate a long random `ADMIN_API_KEY`. Protected API clients must send it in `X-Quant-Desk-Key`; never expose that header value in browser code.
+
+### Full stack
+
+```powershell
+Copy-Item .env.example .env
 docker compose up --build
 ```
 
-The compose stack starts:
+This starts the API, snapshot worker, liquidation stream worker, PostgreSQL, and Redis.
 
-- `backend` on `http://localhost:8000`
-- `worker`, which runs a Binance snapshot every 60 seconds
-- `liquidation-worker`, which streams force-order events into Redis
-- `postgres`
-- `redis`
+## API surface
 
-API:
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/health` | Service health |
+| `GET` | `/api/agent/config` | Agent availability and allow-listed tools |
+| `POST` | `/api/agent/risk-brief` | Evidence-backed risk brief |
+| `GET` | `/api/metrics/latest` | Latest pair metrics |
+| `GET` | `/api/sectors/latest` | Latest sector metrics |
+| `GET` | `/api/events` | Recent anomaly events |
+| `POST` | `/api/ingestion/binance/preview` | Non-persisted live scan |
+| `POST` | `/api/ingestion/binance/snapshot` | Persisted snapshot run |
 
-```text
-GET http://localhost:8000/api/health
-GET http://localhost:8000/api/config/universe
-GET http://localhost:8000/api/config/thresholds
-GET http://localhost:8000/api/metrics/latest
-GET http://localhost:8000/api/sectors/latest
-GET http://localhost:8000/api/events
-POST http://localhost:8000/api/ingestion/binance/snapshot
-POST http://localhost:8000/api/ingestion/binance/preview
-```
-
-Local smoke test without Docker:
+Example:
 
 ```powershell
-.\.venv\Scripts\python -m app.cli binance-snapshot --no-db --no-redis
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://127.0.0.1:8000/api/agent/risk-brief `
+  -ContentType application/json `
+  -Body '{"symbol":"SOLUSDT","horizon":"intrawick"}'
 ```
 
-Run only the liquidation stream collector, if Redis is available:
+## Verification
 
 ```powershell
-.\.venv\Scripts\python -m app.cli run-binance-liquidations
+.\.venv\Scripts\python -m pytest -q
+.\.venv\Scripts\python -m ruff check backend
+node --check app.js
 ```
 
-## Next Engineering Step
+## Design notes and limitations
 
-Add a dedicated CVD trade WebSocket collector and auto-refresh controls in the UI.
+- CVD is currently a candle-derived proxy; a trade-stream aggregator is the next accuracy upgrade.
+- Cached snapshots are marked and rejected by the analyst when older than the configured freshness limit.
+- The application has no exchange order endpoint by design.
+- Authentication and rate limiting are required before exposing the API beyond a trusted demo environment.
+- This project is analytical software, not individualized financial advice.
 
-## New Agent Start
-
-When continuing this repo in a fresh agent chat, read these first:
-
-```text
-CONTEXT.md
-REQ.md
-STATE.md
-STATUS.md
-AGENT_HANDOFF.md
-```
+More detail: [risk analyst architecture](docs/architecture/risk-analyst.md), [requirements](REQ.md), and [metric guide](METRICS.md).

@@ -1,0 +1,40 @@
+version: "1.0"
+purpose: Read-only evidence policy for the Quant Desk Risk Analyst.
+
+rules:
+  - id: human-review
+    title: Human approval is mandatory
+    always: true
+    keywords: [human, review, approval, execution]
+    guidance: The analyst may explain and prioritize evidence, but it cannot recommend or execute a trade.
+
+  - id: data-freshness
+    title: Freshness before inference
+    always: true
+    keywords: [freshness, stale, quality, snapshot]
+    guidance: Stale, degraded, or incomplete snapshots require a needs-context result and lower confidence.
+
+  - id: leverage-crowding
+    title: Leverage and crowding
+    keywords: [leverage, open, interest, oi, market, cap, reflexivity]
+    guidance: Rapid OI expansion or high OI relative to market cap increases reflexivity and liquidation risk.
+
+  - id: flow-divergence
+    title: Price and flow divergence
+    keywords: [flow, divergence, cvd, tcd, price]
+    guidance: Price moving against aggressive flow is a warning, not confirmation; require independent structure evidence.
+
+  - id: liquidity-quality
+    title: Liquidity quality floor
+    keywords: [liquidity, volume, expansion, orderbook]
+    guidance: Thin 24H liquidity, unstable orderbook pressure, or isolated volume spikes reduce confidence.
+
+  - id: liquidation-risk
+    title: Liquidation cascade risk
+    keywords: [liquidation, cascade, long, short, squeeze]
+    guidance: Elevated liquidation share can indicate forced flow and exhaustion; avoid treating it as a directional trigger.
+
+  - id: structure-context
+    title: Structure is context
+    keywords: [base, breakout, fair, value, gap, ema, intrawick]
+    guidance: Base, breakout, EMA, and FVG metrics must be combined with liquidity, OI, and flow rather than used alone.

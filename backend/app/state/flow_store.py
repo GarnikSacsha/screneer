@@ -7,7 +7,6 @@ from typing import Any
 
 import redis.asyncio as redis
 
-
 RETENTION_MS = 60 * 60 * 1000
 WINDOW_MS = 15 * 60 * 1000
 

@@ -4,14 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quant Desk - Sector Screener</title>
-    <link rel="stylesheet" href="styles.css?v=20260522-radar-scope-1" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css?v=20260729-risk-agent-1" />
   </head>
   <body>
     <main class="desk-shell">
       <header class="desk-header">
         <div>
-          <p class="eyebrow">Binance + Bybit · Sector Perps</p>
-          <h1>OI Screener</h1>
+          <p class="eyebrow">Binance USD-M · Risk Intelligence</p>
+          <h1>Quant Desk</h1>
         </div>
         <div class="header-side">
           <label class="scan-mode-box">
@@ -267,6 +268,23 @@
             <ul id="outlookBearish"></ul>
           </section>
         </div>
+
+        <section class="risk-agent-panel" id="riskAgentPanel" aria-label="AI risk analyst">
+          <div class="risk-agent-head">
+            <div>
+              <p class="eyebrow">Read-only agent workflow</p>
+              <h3>AI Risk Analyst</h3>
+              <p id="riskAgentStatus">Select an outlier and request an evidence-grounded brief.</p>
+            </div>
+            <button class="risk-agent-button" id="riskAgentButton" type="button" disabled>
+              Generate risk brief
+            </button>
+          </div>
+          <div class="risk-agent-empty" id="riskAgentOutput">
+            The agent can read the latest server-owned snapshot and retrieve the local risk playbook.
+            It cannot place trades, change thresholds, or bypass human review.
+          </div>
+        </section>
       </section>
 
       <section class="docs-panel" id="metricDocs">
@@ -368,6 +386,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=20260525-cache-first-1"></script>
+    <script src="app.js?v=20260729-risk-agent-1"></script>
   </body>
 </html>

@@ -62,7 +62,7 @@ async def run_binance_liquidation_stream(reconnect_delay: float = 5.0) -> None:
                             side=side,
                             usd=usd,
                         )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - the long-lived stream reconnects after any provider failure
                 print(f"binance liquidation stream reconnecting after {type(exc).__name__}: {exc}")
                 await asyncio.sleep(reconnect_delay)
     finally:

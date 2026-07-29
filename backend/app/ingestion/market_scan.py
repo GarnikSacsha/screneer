@@ -6,7 +6,6 @@ from typing import Any
 from app.core.config import load_universe
 from app.exchanges.binance import BinanceFuturesAdapter
 
-
 SCAN_LIMITS = {
     "core": 0,
     "expanded": 140,
@@ -31,7 +30,7 @@ SECTOR_KEYWORDS = {
 
 def _asset_from_symbol(symbol: str) -> str:
     asset = symbol.removesuffix("USDT")
-    return asset[4:] if asset.startswith("1000") else asset
+    return asset.removeprefix("1000")
 
 
 def _configured_market_maps(universe: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], dict[str, list[str]]]:
@@ -77,7 +76,7 @@ async def build_scan_universe(mode: str = "core") -> dict[str, Any]:
     adapter = BinanceFuturesAdapter(timeout=20.0)
     try:
         exchange_info, tickers = await adapter.get_exchange_info(), await adapter.get_24h_ticker()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - retain the configured universe when discovery is unavailable
         return {
             **base_universe,
             "scan_mode": mode,

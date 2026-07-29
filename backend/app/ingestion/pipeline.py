@@ -102,7 +102,7 @@ async def _fetch_snapshots(markets: list[dict[str, Any]], concurrency: int = 4) 
         async with semaphore:
             try:
                 return await fetch_binance_market_snapshot(symbol, adapter)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - one market must not abort the complete scan
                 errors[symbol] = f"{type(exc).__name__}: {exc}"
                 return None
 
@@ -139,7 +139,7 @@ async def _load_liquidation_windows(markets: list[dict[str, Any]]) -> dict[str, 
             ),
             return_exceptions=True,
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 - liquidation flow is optional enrichment
         return {}
     finally:
         await client.aclose()

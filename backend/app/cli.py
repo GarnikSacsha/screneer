@@ -44,7 +44,7 @@ async def run_poll(args: argparse.Namespace) -> None:
                 create_tables=not args.no_create_tables and first_run,
                 read_flow_redis=not args.no_redis,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - polling must survive transient provider/storage failures
             print(f"snapshot failed {type(exc).__name__}: {exc}")
         else:
             print(

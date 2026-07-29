@@ -12,7 +12,6 @@ from app.core.config import get_settings
 from app.domain.entities import AnomalyEvent, MarketMetrics, SectorMetrics
 from app.state import redis_keys
 
-
 MARKET_METRICS_INDEX = "latest:metrics:index"
 SECTOR_METRICS_INDEX = "latest:sector:index"
 RECENT_EVENTS_KEY = "events:recent"

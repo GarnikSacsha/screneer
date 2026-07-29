@@ -1,42 +1,32 @@
 # Quant Desk Status
 
-## Latest Verified Status
+## Latest verified status
 
-Date checked: 2026-05-22
+Date: 2026-07-29
 
-Local services:
+- Repository access is connected to `GarnikSacsha/screneer`.
+- FastAPI backend and static frontend are integrated.
+- AI Risk Analyst endpoints, bounded tools, fallback path, trace, and UI are implemented.
+- Tests cover context resolution, retrieval, tool scope rejection, deterministic fallback, and stale-data handling.
+- Security baseline includes production fail-closed access, request budgets, strict origins and hosts,
+  response headers, normalized errors, browser-output escaping, loopback Docker bindings, CI, and Dependabot.
 
-- Frontend: `http://127.0.0.1:5500/`
-- Backend health: `http://127.0.0.1:8000/api/health`
-
-Latest observed UI/API state:
-
-- Backend health returned `ok`.
-- Live preview scan returned usable market data.
-- UI showed live sector rows and Outlier Radar rows.
-- Outlier Radar `All Market` and `Selected Sector` modes were verified in the in-app browser.
-
-## Verification Commands
+## Verification
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest backend\tests -q
+.\.venv\Scripts\python -m pytest -q
+.\.venv\Scripts\python -m ruff check backend
 node --check app.js
+git diff --check
 ```
 
-Latest result:
+Expected result:
 
-- `7 passed`
-- `node --check app.js` OK
+- `16 passed`
+- Ruff clean
+- JavaScript syntax valid
+- no whitespace errors
 
-## Git Status
+## Next high-value engineering step
 
-- A local git repository was initialized.
-- Current local root commit: `3844a76 Initial Quant Desk project`
-- GitHub target provided by owner: `https://github.com/GarnikSacsha/screneer.git`
-- Remote access was not available from this environment because GitHub requested credentials.
-
-## Best Next Improvement
-
-Add a dedicated trade WebSocket collector for real CVD/TCD.
-That would replace the current kline-derived proxy and make flow confirmation more useful.
-
+Replace the candle-derived CVD proxy with an aggregated trade WebSocket collector and add recorded fixture-based integration tests for provider degradation.

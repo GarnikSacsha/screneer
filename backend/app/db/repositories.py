@@ -3,7 +3,6 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.entities import AnomalyEvent, Candle, MarketMetrics, SectorMetrics
 from app.db.models import (
     AnomalyEventModel,
     CandleModel,
@@ -13,7 +12,7 @@ from app.db.models import (
     Sector,
     SectorMetricSnapshot,
 )
-
+from app.domain.entities import AnomalyEvent, Candle, MarketMetrics, SectorMetrics
 
 MarketKey = tuple[str, str, str]
 

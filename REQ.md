@@ -1,51 +1,44 @@
 # Quant Desk Requirements
 
-## Goal
+## Product goal
 
-Build a practical crypto perpetual-futures screener that highlights the best sectors and pairs for attention.
-The app should help the user find early base-breakout and relative-strength situations before they become obvious.
+Build a practical perpetual-futures intelligence workspace that helps a human analyst find early sector and pair anomalies, understand the supporting evidence, and identify the risks that could invalidate the observation.
 
-## Product Requirements
+## Core requirements
 
-- Prefer quality candidates over full-market noise.
-- Show sector-level strength and weakness.
-- Show pair-level outliers across the whole market.
-- Allow pair-level outliers to be filtered by the selected sector.
-- Keep `Intrawick` as the main decision horizon.
-- Keep `Intraday` as a faster secondary view.
-- Use live Binance futures data when available.
-- Fall back to cached data when live API data is unavailable.
-- Never present old hardcoded demo prices as live market data.
+- Rank quality candidates instead of maximizing market coverage.
+- Show sector strength, weakness, participation, and pair-level outliers.
+- Support `Intrawick` as the primary horizon and `Intraday` as a faster view.
+- Use live Binance USD-M data when available.
+- Fall back to a clearly labelled materialized cache when live data is unavailable.
+- Never present stale or hard-coded prices as live data.
+- Keep critical status, signal, and OI information visible on narrow screens.
 
-## Signal Ingredients
+## Signal inputs
 
-The screener should rank candidates using confluence from:
+- relative strength against market and sector;
+- 5M, 1H, and 24H price performance;
+- 24H liquidity and short-window volume expansion;
+- open-interest size, delta, and market-cap significance;
+- candle-derived CVD and liquidation pressure;
+- multi-day base, breakout, EMA, FVG, and order-book context;
+- sector participation and anomaly events.
 
-- relative strength vs market and sector
-- 24H liquidity
-- 5M / 24H and 15M volume expansion
-- open interest size and OI delta
-- OI / market-cap significance
-- CVD/TCD confirmation
-- multi-day base and consolidation behavior
-- breakout behavior from local range
-- 4H and 1D EMA support
-- orderbook bid/ask wall pressure
-- daily FVG proximity or active test
-- sector confirmation
+## AI Risk Analyst requirements
 
-## UX Requirements
+- Use only server-owned snapshot evidence and a local risk playbook.
+- Restrict the model to allow-listed, read-only tools.
+- Validate tool scope, structured output, evidence references, and prohibited execution language server-side.
+- Return only `monitor`, `avoid`, or `needs_context` stances.
+- Expose provider, model, latency, token usage, tool calls, safety flags, and fallback reason.
+- Require human review and keep execution disabled in every response.
+- Use a deterministic fallback when no API key is configured or the provider path fails.
+- Treat stale or degraded data as insufficient context.
 
-- The first screen should be the usable terminal, not a landing page.
-- The UI should stay dense, scan-friendly and work-focused.
-- Data status must be visible: `Live`, `Cached`, `Unavailable`.
-- Outlier Radar must clearly indicate whether it is showing `All Market` or `Selected Sector`.
-- On narrow screens, critical columns must not disappear silently. At minimum keep sector, signal and OI delta visible.
+## Non-goals
 
-## Non-Goals
-
-- This is not an entry/exit execution bot.
-- This is not a public marketing site.
-- Daily FVG is context, not a standalone trigger.
-- Current CVD/TCD is a kline-derived proxy until a real trade WebSocket collector is added.
-
+- Trade execution, order placement, portfolio allocation, or position sizing.
+- Personalized financial advice.
+- A public marketing site.
+- Treating an FVG or any single metric as a standalone signal.
+- Claiming candle-derived CVD is equivalent to aggregated trade flow.

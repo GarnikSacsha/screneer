@@ -53,7 +53,7 @@ def _cvd_15m_from_candles(candles: list[Candle]) -> float | None:
 def _rolling_sum(values: list[float], window: int) -> list[float]:
     if len(values) < window:
         return []
-    return [sum(values[index : index + window]) for index in range(0, len(values) - window + 1)]
+    return [sum(values[index : index + window]) for index in range(len(values) - window + 1)]
 
 
 def _consolidation_breakout_from_candles(candles: list[Candle]) -> tuple[float | None, float | None, float | None]:
@@ -209,7 +209,7 @@ def _daily_fvg_metrics_from_klines(
             continue
 
         in_zone = low <= latest_price <= high
-        nearest = low if latest_price < low else high if latest_price > high else latest_price
+        nearest = low if latest_price < low else min(latest_price, high)
         distance_pct = ((latest_price / nearest) - 1) * 100 if nearest > 0 else None
         candidates.append(
             {
@@ -314,7 +314,7 @@ async def fetch_binance_market_snapshot(
     async def capture(coro: Any) -> Any:
         try:
             return await coro
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - capture preserves partial snapshot availability
             return exc
 
     async def pause() -> None:
@@ -370,7 +370,7 @@ async def fetch_binance_market_snapshot(
     try:
         await pause()
         open_interest_history = await adapter.get_open_interest_history(symbol=symbol, period="5m", limit=4)
-    except Exception:
+    except Exception:  # noqa: BLE001 - OI history is optional enrichment
         open_interest_history = []
 
     candles = [adapter.normalize_kline(raw, symbol=symbol, interval="5m") for raw in klines]

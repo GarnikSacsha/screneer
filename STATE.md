@@ -1,49 +1,42 @@
 # Quant Desk State
 
-## Current Working State
+## Current implementation
 
 Frontend:
 
-- `index.html`, `styles.css`, `app.js`
-- Dark terminal-style dashboard
-- Sector Screener table with filters and sorting
-- Detail panel for selected sector
-- Basket constituent table
-- Outlier Radar with two scopes:
-  - `All Market`
-  - `Selected Sector`
-- Outlook Cockpit for selected outlier
-- Methodology and metric documentation sections
+- terminal-style sector and pair screener;
+- global and selected-sector Outlier Radar;
+- selected-market Outlook Cockpit;
+- integrated AI Risk Analyst with evidence and trace rendering;
+- explicit live, cached, unavailable, stale, and fallback states;
+- responsive layout that preserves critical columns.
 
 Backend:
 
-- FastAPI app under `backend/`
-- Binance USD-M futures preview pipeline
-- Live scan universe builder
-- Metrics engine for market and sector metrics
-- Redis/Postgres support for persisted pipeline mode
-- Cached preview fallback via `latest-preview.json`
+- FastAPI application and typed response schemas;
+- Binance USD-M REST snapshot pipeline;
+- liquidation WebSocket collector;
+- sector aggregation and anomaly engine;
+- Redis latest state and PostgreSQL history;
+- materialized cache fallback;
+- bounded OpenAI Responses API workflow with strict structured output;
+- deterministic Risk Analyst fallback;
+- YAML-based universe, thresholds, and risk playbook.
 
-## Recent Implementation Notes
+## Safety boundary
 
-- Removed misleading demo-price fallback from normal failure flow.
-- Added cache fallback for live scan failures.
-- Fixed stale scan responses overwriting newer UI state.
-- Added daily FVG detection and display in Outlier Radar.
-- Added Outlier Radar scope toggle so the radar can be global or tied to the selected sector.
-- Adjusted narrow viewport sector rows so `Signal` and `OI delta` remain visible.
+- The agent has two read-only tools.
+- Tool requests cannot escape the user-approved symbol or horizon.
+- Unknown evidence references and execution language are rejected.
+- Every brief requires human review.
+- No exchange order API exists.
+- Production and staging fail closed around expensive endpoints without an admin key.
+- Per-process request budgets protect the localhost demo from accidental abuse.
+- Browser output, API error boundaries, security headers, and Docker loopback bindings are hardened.
 
-## Current Data Behavior
+## Known limitations
 
-- Core preview usually scans around 98 live pairs from the configured universe.
-- Full market scans are slower and noisier.
-- Cached preview is legitimate fallback data, but should be visibly marked as cached.
-- `latest-preview.json` is included so the UI has a fallback snapshot.
-
-## Known Limitations
-
-- CVD/TCD is still a proxy derived from klines, not a real aggregated trades collector.
-- No authentication is implemented for sharing the app outside localhost.
-- The repo has a local git history, but GitHub remote push requires user credentials/access.
-- Some legacy Russian text in existing docs may have mojibake from earlier encoding issues.
-
+- CVD is candle-derived rather than built from an aggregated trade stream.
+- The checked-in preview is intentionally stale and demonstrates freshness rejection until a live scan refreshes it.
+- Authentication and rate limiting are not implemented.
+- Model-backed analysis requires a locally configured OpenAI API key.

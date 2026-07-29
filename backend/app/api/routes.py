@@ -1,11 +1,17 @@
 import asyncio
 import json
 from pathlib import Path
+from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+import structlog
+from fastapi import APIRouter, Depends, HTTPException
 from redis.exceptions import RedisError
 
-from app.core.config import get_settings, load_thresholds, load_universe
+from app.agent.context import SnapshotNotFoundError
+from app.agent.models import RiskAgentConfigResponse, RiskBriefRequest, RiskBriefResponse
+from app.agent.service import build_risk_brief
+from app.core.config import get_settings, load_thresholds
+from app.core.security import require_expensive_access
 from app.ingestion.market_scan import build_scan_universe
 from app.ingestion.pipeline import run_binance_snapshot
 from app.schemas import (
@@ -24,6 +30,7 @@ from app.state.redis_store import (
 )
 
 router = APIRouter()
+logger = structlog.get_logger(__name__)
 REDIS_READ_TIMEOUT_SEC = 0.9
 CACHE_PATH = Path(__file__).resolve().parents[3] / "latest-preview.json"
 
@@ -34,8 +41,37 @@ async def health() -> HealthResponse:
     return HealthResponse(status="ok", app=settings.app_name, env=settings.app_env)
 
 
-@router.get("/config/universe")
-async def universe(mode: str = "core") -> dict:
+@router.get("/agent/config", response_model=RiskAgentConfigResponse)
+async def risk_agent_config() -> RiskAgentConfigResponse:
+    settings = get_settings()
+    return RiskAgentConfigResponse(
+        enabled=settings.risk_agent_enabled,
+        configured=bool(settings.openai_api_key),
+        model=settings.risk_agent_model,
+        tools=["get_market_snapshot", "retrieve_risk_playbook"],
+    )
+
+
+@router.post(
+    "/agent/risk-brief",
+    response_model=RiskBriefResponse,
+    dependencies=[Depends(require_expensive_access)],
+)
+async def risk_brief(request: RiskBriefRequest) -> RiskBriefResponse:
+    settings = get_settings()
+    if not settings.risk_agent_enabled:
+        raise HTTPException(status_code=503, detail="Risk analyst is disabled")
+    try:
+        return await build_risk_brief(request, settings, CACHE_PATH)
+    except SnapshotNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Symbol is unavailable in the latest snapshot") from exc
+    except json.JSONDecodeError as exc:
+        logger.exception("risk_brief_invalid_snapshot")
+        raise HTTPException(status_code=500, detail="Materialized snapshot is invalid") from exc
+
+
+@router.get("/config/universe", dependencies=[Depends(require_expensive_access)])
+async def universe(mode: Literal["core", "expanded", "full"] = "core") -> dict:
     return await build_scan_universe(mode)
 
 
@@ -91,19 +127,25 @@ async def latest_preview_cache() -> dict:
     try:
         payload = json.loads(CACHE_PATH.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail=f"Cached preview is invalid: {exc}") from exc
+        logger.exception("cached_preview_invalid")
+        raise HTTPException(status_code=500, detail="Cached preview is invalid") from exc
 
     payload.setdefault("universe", await build_scan_universe("core"))
     payload["source"] = "cache"
     return payload
 
 
-@router.post("/ingestion/binance/snapshot", response_model=SnapshotRunResponse)
+@router.post(
+    "/ingestion/binance/snapshot",
+    response_model=SnapshotRunResponse,
+    dependencies=[Depends(require_expensive_access)],
+)
 async def binance_snapshot() -> SnapshotRunResponse:
     try:
         result = await run_binance_snapshot()
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Snapshot failed: {type(exc).__name__}: {exc}") from exc
+        logger.exception("binance_snapshot_failed")
+        raise HTTPException(status_code=502, detail="Market snapshot provider is unavailable") from exc
 
     return SnapshotRunResponse(
         ts=result.ts,
@@ -114,13 +156,25 @@ async def binance_snapshot() -> SnapshotRunResponse:
     )
 
 
-@router.post("/ingestion/binance/preview", response_model=SnapshotPreviewResponse)
-async def binance_preview(mode: str = "core") -> SnapshotPreviewResponse:
+@router.post(
+    "/ingestion/binance/preview",
+    response_model=SnapshotPreviewResponse,
+    dependencies=[Depends(require_expensive_access)],
+)
+async def binance_preview(
+    mode: Literal["core", "expanded", "full"] = "core",
+) -> SnapshotPreviewResponse:
     try:
         universe = await build_scan_universe(mode)
-        result = await run_binance_snapshot(universe_override=universe, persist_db=False, write_redis=False, read_flow_redis=False)
+        result = await run_binance_snapshot(
+            universe_override=universe,
+            persist_db=False,
+            write_redis=False,
+            read_flow_redis=False,
+        )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Preview failed: {type(exc).__name__}: {exc}") from exc
+        logger.exception("binance_preview_failed", mode=mode)
+        raise HTTPException(status_code=502, detail="Market preview provider is unavailable") from exc
 
     response = SnapshotPreviewResponse(
         ts=result.ts,

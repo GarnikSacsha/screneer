@@ -1,86 +1,40 @@
 # Quant Desk Context
 
-Use this file as the first-stop context for new agents working on this repo.
+## Owner and product
 
-## Owner
+- Preferred conversation language: Russian, casual and precise.
+- Quant Desk is an internal crypto perpetual-futures intelligence terminal.
+- The objective is to surface a small number of defensible sector and pair anomalies before expansion becomes obvious.
+- Intrawick is the primary horizon; intraday is secondary.
+- Practical usefulness, truthful data states, and test evidence matter more than decorative UI.
 
-- Preferred language: Russian, casual but precise.
-- The owner wants proactive engineering: inspect first, implement, test, then explain plainly.
-- This is a practical internal crypto screener/terminal, not a marketing page.
-- The product should surface high-quality crypto perpetual futures candidates instead of dumping all market noise.
+## Current architecture
 
-## Product Idea
+- Static terminal UI: `index.html`, `styles.css`, `app.js`
+- FastAPI application: `backend/app`
+- Binance USD-M REST snapshots and liquidation WebSocket ingestion
+- Metric, sector aggregation, and anomaly pipeline
+- Redis latest state, PostgreSQL history, and materialized JSON fallback
+- Bounded AI Risk Analyst under `backend/app/agent`
+- Local YAML configuration under `config`
 
-Quant Desk is an anomaly screener for Binance USD-M perpetual futures.
-It is designed to find sectors and pairs that may be ready for meaningful expansion, especially after consolidation.
+The AI workflow has two read-only tools, strict output validation, human review, no execution capability, and a deterministic fallback.
 
-The main questions:
-
-- Which sectors are strongest or weakest right now?
-- Which pairs deserve attention today?
-- Which names are building a base, breaking from consolidation, or becoming outliers?
-- Is a move supported by volume, OI, CVD/TCD, orderbook pressure and sector context?
-- Is there useful higher-timeframe context such as 4H/1D EMA support or a daily FVG test?
-
-The primary horizon is medium-term / intrawick. Intraday is a secondary view.
-
-## Current Architecture
-
-Frontend:
-
-- Static app in `index.html`, `styles.css`, `app.js`
-- Local frontend server usually runs on `http://127.0.0.1:5500/`
-- UI modes: `Core`, `Expanded`, `Full Market`
-- Horizons: `Intrawick`, `Intraday`
-- Sector table, sector detail panel, Outlier Radar and Outlook Cockpit
-- Outlier Radar supports `All Market` and `Selected Sector` scopes
-
-Backend:
-
-- FastAPI app in `backend/`
-- Local backend usually runs on `http://127.0.0.1:8000/`
-- Preview endpoint: `POST /api/ingestion/binance/preview?mode=core`
-- Cache fallback endpoint: `GET /api/cache/latest-preview`
-- Data sources include Binance futures candles, tickers, open interest, 4H/1D klines and orderbook snapshots
-
-## Important Files
-
-- `README.md` - local run and backend overview
-- `REQ.md` - product requirements
-- `STATE.md` - current implementation state
-- `STATUS.md` - latest status and known verification
-- `AGENT_HANDOFF.md` - longer canonical handoff memory
-- `ANOMALY_SCREENER_TZ.md` - detailed product/engineering spec
-- `METRICS.md` - metric explanations
-- `config/universe.yaml` - scan universe
-- `config/thresholds.yaml` - anomaly thresholds
-
-## Runbook
-
-Start backend:
+## Start and verify
 
 ```powershell
-cd "C:\Users\Денис\Desktop\quant desk\backend"
-C:\Users\Денис\Desktop\quant desk\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -e ".\backend[dev]"
+Copy-Item .env.example .env
+.\.venv\Scripts\python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
-Start frontend:
+Open `http://127.0.0.1:8000`.
 
 ```powershell
-cd "C:\Users\Денис\Desktop\quant desk"
-.\.venv\Scripts\python.exe -m http.server 5500
-```
-
-Open:
-
-```text
-http://127.0.0.1:5500/
-```
-
-Tests:
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest backend\tests -q
+.\.venv\Scripts\python -m pytest -q
+.\.venv\Scripts\python -m ruff check backend
 node --check app.js
 ```
 
+Read `README.md`, `REQ.md`, `STATE.md`, `STATUS.md`, and `docs/architecture/risk-analyst.md` before making architectural changes.

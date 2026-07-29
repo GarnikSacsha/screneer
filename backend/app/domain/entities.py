@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID, uuid4
 
-
 MarketStatus = Literal["active", "degraded", "stale", "disabled"]
 EventSeverity = Literal["info", "medium", "high", "critical"]
 EventScope = Literal["market", "sector"]
